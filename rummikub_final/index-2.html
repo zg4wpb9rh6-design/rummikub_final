@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎲 Rummikub Detector</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red: #FF6B6B;
+      --blue: #4ECDC4;
+      --yellow: #FFE66D;
+      --orange: #FF9F43;
+      --purple: #A29BFE;
+      --black: #2d3436;
+      --bg: #FFF9F0;
+      --card: #ffffff;
+      --text: #2d2d2d;
+      --shadow: 0 8px 32px rgba(0,0,0,0.10);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .bg-tiles {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .bg-tile {
+      position: absolute;
+      width: 60px;
+      height: 80px;
+      border-radius: 10px;
+      opacity: 0.06;
+      animation: floatTile linear infinite;
+    }
+
+    @keyframes floatTile {
+      0% { transform: translateY(110vh) rotate(0deg); }
+      100% { transform: translateY(-20vh) rotate(360deg); }
+    }
+
+    header {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 2.5rem 1rem 1.5rem;
+    }
+
+    .logo {
+      font-family: 'Fredoka One', cursive;
+      font-size: 3rem;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #FF6B6B, #4ECDC4, #FFE66D, #FF9F43);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      color: #888;
+      font-weight: 600;
+      margin-top: 0.3rem;
+      letter-spacing: 1px;
+    }
+
+    .color-bar {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 0.8rem auto;
+    }
+
+    .color-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .color-dot:nth-child(1) { background: #E63946; animation-delay: 0s; }
+    .color-dot:nth-child(2) { background: #2196F3; animation-delay: 0.3s; }
+    .color-dot:nth-child(3) { background: #FFB703; animation-delay: 0.6s; }
+    .color-dot:nth-child(4) { background: #1a1a2e; animation-delay: 0.9s; }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.4); }
+    }
+
+    main {
+      position: relative;
+      z-index: 10;
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 0 1.2rem 3rem;
+    }
+
+    .upload-card {
+      background: var(--card);
+      border-radius: 24px;
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      border: 3px dashed #e0e0e0;
+      transition: border-color 0.3s, transform 0.2s;
+      cursor: pointer;
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .upload-card:hover, .upload-card.drag-over {
+      border-color: var(--blue);
+      transform: translateY(-3px);
+      box-shadow: 0 16px 48px rgba(33,150,243,0.15);
+    }
+
+    .upload-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .upload-text {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+    }
+
+    .upload-sub {
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+
+    #fileInput { display: none; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.8rem 1.8rem;
+      border-radius: 50px;
+      border: none;
+      font-family: 'Nunito', sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #4ECDC4, #2EBFB3);
+      color: white;
+      box-shadow: 0 4px 15px rgba(78,205,196,0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(78,205,196,0.5);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: #f5f5f5;
+      color: #666;
+    }
+
+    .btn-secondary:hover {
+      background: #eee;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+
+    #preview-section {
+      display: none;
+      margin-bottom: 1.5rem;
+    }
+
+    .preview-card {
+      background: var(--card);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .preview-card img, .preview-card canvas {
+      width: 100%;
+      display: block;
+      max-height: 400px;
+      object-fit: contain;
+      background: #f8f8f8;
+    }
+
+    #status {
+      display: none;
+      text-align: center;
+      padding: 1rem;
+      border-radius: 16px;
+      margin-bottom: 1.5rem;
+      font-weight: 700;
+      font-size: 1rem;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .status-loading { background: linear-gradient(135deg, #E3F2FD, #BBDEFB); color: var(--blue); }
+    .status-success { background: linear-gradient(135deg, #E8F5E9, #C8E6C9); color: #2E7D32; }
+    .status-error { background: linear-gradient(135deg, #FFEBEE, #FFCDD2); color: var(--red); }
+
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(33,150,243,0.3);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-left: 8px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #results { display: none; animation: fadeIn 0.5s ease; }
+
+    .result-banner {
+      border-radius: 20px;
+      padding: 1.5rem 2rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: var(--shadow);
+    }
+
+    .result-valid { background: linear-gradient(135deg, #E8F5E9, #A5D6A7); border-right: 6px solid #2E7D32; }
+    .result-invalid { background: linear-gradient(135deg, #FFEBEE, #FFCDD2); border-right: 6px solid var(--red); }
+
+    .result-emoji { font-size: 3rem; animation: tada 1s ease; }
+
+    @keyframes tada {
+      0% { transform: scale(1); }
+      10% { transform: scale(0.9) rotate(-3deg); }
+      20% { transform: scale(1.1) rotate(3deg); }
+      40% { transform: scale(1.1) rotate(-3deg); }
+      60% { transform: scale(1.1) rotate(3deg); }
+      80% { transform: scale(1) rotate(0); }
+      100% { transform: scale(1); }
+    }
+
+    .result-text h2 { font-family: 'Fredoka One', cursive; font-size: 1.6rem; margin-bottom: 0.3rem; }
+    .result-valid .result-text h2 { color: #1B5E20; }
+    .result-invalid .result-text h2 { color: #B71C1C; }
+    .result-text p { font-size: 1.1rem; opacity: 0.85; font-weight: 700; }
+
+    .tiles-section {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+      margin-bottom: 1.5rem;
+    }
+
+    .tiles-title { font-family: 'Fredoka One', cursive; font-size: 1.2rem; margin-bottom: 1rem; color: var(--text); display: flex; align-items: center; gap: 0.5rem; }
+
+    .tiles-grid { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+
+    .tile-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      animation: popIn 0.3s ease backwards;
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .tile-red { background: linear-gradient(135deg, #E63946, #C62828); }
+    .tile-blue { background: linear-gradient(135deg, #2196F3, #1565C0); }
+    .tile-yellow { background: linear-gradient(135deg, #FFB703, #F57F17); }
+    .tile-black { background: linear-gradient(135deg, #37474F, #1a1a2e); }
+
+    #outputCanvas { width: 100%; border-radius: 16px; }
+
+    footer { position: relative; z-index: 10; text-align: center; padding: 1rem; color: #bbb; font-size: 0.8rem; font-weight: 600; }
+
+    .model-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: white;
+      border-radius: 50px;
+      padding: 0.4rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 1.5rem;
+    }
+
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; }
+    .status-dot.loading { background: var(--yellow); animation: pulse 1s infinite; }
+    .status-dot.ready { background: #4CAF50; }
+    .status-dot.error { background: var(--red); }
+
+    @media (max-width: 480px) {
+      .logo { font-size: 2.2rem; }
+      .upload-icon { font-size: 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-tiles" id="bgTiles"></div>
+
+<header>
+  <div class="logo">Rummikub Tile Detection 🎲</div>
+  <div class="subtitle">זיהוי אריחי רמיקוב וסטים חוקיים</div>
+  <div class="color-bar">
+    <div class="color-dot"></div>
+    <div class="color-dot"></div>
+    <div class="color-dot"></div>
+    <div class="color-dot"></div>
+  </div>
+</header>
+
+<main>
+  <div style="text-align:center">
+    <div class="model-status" id="modelStatus">
+      <div class="status-dot loading" id="statusDot"></div>
+      <span id="statusText">טוען מודל...</span>
+    </div>
+  </div>
+
+  <div class="upload-card" id="uploadArea">
+    <div class="upload-icon">📸</div>
+    <div class="upload-text">העלה תמונה של אריחי רמיקוב 🎲</div>
+    <div class="upload-sub">לחץ או גרור תמונה לכאן</div>
+    <input type="file" id="fileInput" accept="image/*">
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" id="detectBtn" disabled>זהה 🔍</button>
+    <button class="btn btn-secondary" id="resetBtn" style="display:none">תמונה חדשה 🔄</button>
+  </div>
+
+  <div id="status"></div>
+
+  <div id="preview-section">
+    <div class="preview-card">
+      <canvas id="outputCanvas"></canvas>
+    </div>
+  </div>
+
+  <div id="results">
+    <div class="result-banner" id="resultBanner">
+      <div class="result-emoji" id="resultEmoji"></div>
+      <div class="result-text">
+        <h2 id="resultTitle"></h2>
+        <p id="resultDesc"></p>
+      </div>
+    </div>
+    <div class="tiles-section" id="tilesSection" style="display:none">
+      <div class="tiles-title">אריחים שזוהו 🎯</div>
+      <div class="tiles-grid" id="tilesGrid"></div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  Rummikub Tile Detection • Shir Gutman • 2026
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.11.0/dist/tf.min.js"></script>
+<script>
+  const colors = ['#FF6B6B','#4ECDC4','#FFE66D','#FF9F43','#A29BFE'];
+  const bgContainer = document.getElementById('bgTiles');
+  for (let i = 0; i < 20; i++) {
+    const tile = document.createElement('div');
+    tile.className = 'bg-tile';
+    tile.style.cssText = `
+      left: ${Math.random() * 100}%;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      animation-duration: ${8 + Math.random() * 12}s;
+      animation-delay: ${-Math.random() * 15}s;
+      width: ${40 + Math.random() * 40}px;
+      height: ${55 + Math.random() * 40}px;
+    `;
+    bgContainer.appendChild(tile);
+  }
+
+  const CLASS_NAMES = [
+    'black_1','black_10','black_11','black_12','black_13',
+    'black_2','black_3','black_4','black_5','black_6',
+    'black_7','black_8','black_9',
+    'blue_1','blue_10','blue_11','blue_12','blue_13',
+    'blue_2','blue_3','blue_4','blue_5','blue_6',
+    'blue_7','blue_8','blue_9',
+    'red_1','red_10','red_11','red_12','red_13',
+    'red_2','red_3','red_4','red_5','red_6',
+    'red_7','red_8','red_9',
+    'yellow_1','yellow_10','yellow_11','yellow_12','yellow_13',
+    'yellow_2','yellow_3','yellow_4','yellow_5','yellow_6',
+    'yellow_7','yellow_8','yellow_9'
+  ];
+
+  const COLOR_MAP = {
+    red: '#E63946',
+    blue: '#2196F3',
+    yellow: '#FFB703',
+    black: '#37474F'
+  };
+
+  function isRun(tiles) {
+    if (tiles.length < 3) return false;
+    const colors = tiles.map(t => t.color);
+    if (new Set(colors).size !== 1) return false;
+    const nums = tiles.map(t => t.number).sort((a,b) => a-b);
+    for (let i = 1; i < nums.length; i++) {
+      if (nums[i] !== nums[i-1] + 1) return false;
+    }
+    return true;
+  }
+
+  function isGroup(tiles) {
+    if (tiles.length < 3 || tiles.length > 4) return false;
+    const nums = tiles.map(t => t.number);
+    const colors = tiles.map(t => t.color);
+    if (new Set(nums).size !== 1) return false;
+    if (new Set(colors).size !== colors.length) return false;
+    return true;
+  }
+
+  function combinations(arr, k) {
+    if (k === 0) return [[]];
+    if (arr.length < k) return [];
+    const [first, ...rest] = arr;
+    const withFirst = combinations(rest, k-1).map(c => [first, ...c]);
+    const withoutFirst = combinations(rest, k);
+    return [...withFirst, ...withoutFirst];
+  }
+
+  function findValidSet(tiles) {
+    for (const size of [3, 4]) {
+      for (const combo of combinations(tiles, size)) {
+        if (isRun(combo)) return { valid: true, type: 'רצף', tiles: combo };
+        if (isGroup(combo)) return { valid: true, type: 'קבוצה', tiles: combo };
+      }
+    }
+    return { valid: false };
+  }
+
+  let model = null;
+
+  async function loadModel() {
+    try {
+      setModelStatus('loading', 'טוען מודל...');
+      model = await tf.loadGraphModel('tfjs_model/model.json');
+      setModelStatus('ready', 'המודל מוכן ✓');
+      document.getElementById('detectBtn').disabled = false;
+    } catch (e) {
+      setModelStatus('error', 'שגיאה בטעינת המודל');
+      console.error(e);
+    }
+  }
+
+  function setModelStatus(state, text) {
+    document.getElementById('statusDot').className = 'status-dot ' + state;
+    document.getElementById('statusText').textContent = text;
+  }
+
+  const uploadArea = document.getElementById('uploadArea');
+  const fileInput = document.getElementById('fileInput');
+  const detectBtn = document.getElementById('detectBtn');
+  const resetBtn = document.getElementById('resetBtn');
+
+  let currentImage = null;
+
+  uploadArea.addEventListener('click', () => fileInput.click());
+  uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+  uploadArea.addEventListener('dragleave', () => { uploadArea.classList.remove('drag-over'); });
+  uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  });
+
+  function handleFile(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        currentImage = img;
+        drawImageOnCanvas(img);
+        document.getElementById('preview-section').style.display = 'block';
+        document.getElementById('results').style.display = 'none';
+        document.getElementById('status').style.display = 'none';
+        resetBtn.style.display = 'inline-flex';
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function drawImageOnCanvas(img) {
+    const canvas = document.getElementById('outputCanvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+  }
+
+  resetBtn.addEventListener('click', () => {
+    currentImage = null;
+    fileInput.value = '';
+    document.getElementById('preview-section').style.display = 'none';
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('status').style.display = 'none';
+    resetBtn.style.display = 'none';
+  });
+
+  detectBtn.addEventListener('click', runDetection);
+
+  async function runDetection() {
+    if (!model || !currentImage) return;
+    showStatus('loading', 'מזהה אריחים... <span class="spinner"></span> 🔍');
+    detectBtn.disabled = true;
+    await new Promise(r => setTimeout(r, 50));
+
+    try {
+      const INPUT_SIZE = 512;
+      const canvas = document.createElement('canvas');
+      canvas.width = INPUT_SIZE;
+      canvas.height = INPUT_SIZE;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(currentImage, 0, 0, INPUT_SIZE, INPUT_SIZE);
+
+      const tensor = tf.tidy(() => {
+        return tf.browser.fromPixels(canvas).toFloat().div(255.0).expandDims(0);
+      });
+
+      const output = await model.executeAsync(tensor);
+      tensor.dispose();
+
+      const data = await output.data();
+      output.dispose();
+
+      const detections = parseDetections(data, INPUT_SIZE, 0.35);
+      const nmsDetections = nms(detections, 0.45);
+
+      drawDetections(nmsDetections);
+
+      const tiles = nmsDetections.map(d => {
+        const parts = CLASS_NAMES[d.classId].split('_');
+        return { color: parts[0], number: parseInt(parts[1]) };
+      });
+
+      const result = findValidSet(tiles);
+      showResults(result, tiles);
+      showStatus('success', `✅ זוהו ${tiles.length} אריחים`);
+
+    } catch (e) {
+      console.error(e);
+      showStatus('error', '❌ שגיאה בזיהוי: ' + e.message);
+    }
+
+    detectBtn.disabled = false;
+  }
+
+  function parseDetections(data, inputSize, confThresh) {
+    const numPredictions = 5376;
+    const detections = [];
+
+    for (let i = 0; i < numPredictions; i++) {
+      let maxScore = 0;
+      let maxClass = 0;
+      for (let c = 0; c < 52; c++) {
+        const score = data[(4 + c) * numPredictions + i];
+        if (score > maxScore) { maxScore = score; maxClass = c; }
+      }
+
+      if (maxScore < confThresh) continue;
+
+      const cx = data[0 * numPredictions + i];
+      const cy = data[1 * numPredictions + i];
+      const w  = data[2 * numPredictions + i];
+      const h  = data[3 * numPredictions + i];
+
+      detections.push({ cx, cy, w, h, x1: cx-w/2, y1: cy-h/2, x2: cx+w/2, y2: cy+h/2, score: maxScore, classId: maxClass });
+    }
+    return detections;
+  }
+
+  function iou(a, b) {
+    const x1 = Math.max(a.x1, b.x1), y1 = Math.max(a.y1, b.y1);
+    const x2 = Math.min(a.x2, b.x2), y2 = Math.min(a.y2, b.y2);
+    const inter = Math.max(0, x2-x1) * Math.max(0, y2-y1);
+    return inter / (a.w*a.h + b.w*b.h - inter);
+  }
+
+  function nms(dets, iouThresh) {
+    dets.sort((a,b) => b.score - a.score);
+    const keep = [], suppressed = new Set();
+    for (let i = 0; i < dets.length; i++) {
+      if (suppressed.has(i)) continue;
+      keep.push(dets[i]);
+      for (let j = i+1; j < dets.length; j++) {
+        if (iou(dets[i], dets[j]) > iouThresh) suppressed.add(j);
+      }
+    }
+    return keep;
+  }
+
+  function drawDetections(detections) {
+    const canvas = document.getElementById('outputCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.drawImage(currentImage, 0, 0, W, H);
+    const scaleX = W / 512, scaleY = H / 512;
+
+    for (const det of detections) {
+      const className = CLASS_NAMES[det.classId];
+      const color = COLOR_MAP[className.split('_')[0]] || '#888';
+      const x1 = det.x1 * 512 * scaleX, y1 = det.y1 * 512 * scaleY;
+      const bw = det.w * 512 * scaleX, bh = det.h * 512 * scaleY;
+
+      ctx.strokeStyle = color; ctx.lineWidth = 3;
+      ctx.shadowColor = color; ctx.shadowBlur = 6;
+      ctx.strokeRect(x1, y1, bw, bh);
+      ctx.shadowBlur = 0;
+
+      const label = `${className} ${(det.score*100).toFixed(0)}%`;
+      ctx.font = 'bold 14px Nunito, sans-serif';
+      const tw = ctx.measureText(label).width;
+      ctx.fillStyle = color;
+      ctx.fillRect(x1, y1 - 24, tw + 12, 24);
+      ctx.fillStyle = 'white';
+      ctx.fillText(label, x1 + 6, y1 - 6);
+    }
+  }
+
+  function showResults(result, tiles) {
+    const resultsEl = document.getElementById('results');
+    const banner = document.getElementById('resultBanner');
+    resultsEl.style.display = 'block';
+
+    if (result.valid) {
+      banner.className = 'result-banner result-valid';
+      document.getElementById('resultEmoji').textContent = '🎉';
+      document.getElementById('resultTitle').textContent = 'נמצא סט חוקי!';
+      document.getElementById('resultDesc').innerHTML = `סוג: ${result.type}`;
+    } else {
+      banner.className = 'result-banner result-invalid';
+      document.getElementById('resultEmoji').textContent = '😕';
+      document.getElementById('resultTitle').textContent = 'לא נמצא סט חוקי';
+      document.getElementById('resultDesc').textContent = `זוהו ${tiles.length} אריחים - אין רצף או קבוצה חוקית`;
+    }
+
+    const tilesGrid = document.getElementById('tilesGrid');
+    tilesGrid.innerHTML = '';
+    if (tiles.length > 0) {
+      document.getElementById('tilesSection').style.display = 'block';
+      tiles.forEach((tile, i) => {
+        const chip = document.createElement('div');
+        chip.className = `tile-chip tile-${tile.color}`;
+        chip.style.animationDelay = `${i * 0.05}s`;
+        chip.textContent = `${tile.number} ${tile.color === 'red' ? '🔴' : tile.color === 'blue' ? '🔵' : tile.color === 'yellow' ? '🟡' : '⚫'}`;
+        tilesGrid.appendChild(chip);
+      });
+    }
+  }
+
+  function showStatus(type, html) {
+    const el = document.getElementById('status');
+    el.style.display = 'block';
+    el.className = `status-${type}`;
+    el.innerHTML = html;
+  }
+
+  loadModel();
+</script>
+</body>
+</html>
